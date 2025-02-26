@@ -137,16 +137,38 @@ public class Dao {
 
     public static boolean modificarPasswordUsuario(String nombre, String password) {
         // TODO 08 modificarPasswordUsuario
-        return false;
+        if (!mapaUsuarios.containsKey(nombre)) {
+            return false;
+        } else {
+            Usuario usuario = mapaUsuarios.get(nombre);
+            String nuevaSal = Security.generateSalt();
+            String nuevoHas = Security.hash(password + Security.generateSalt());
+            String NOMBRE = String.valueOf(mapaUsuarios.get(nombre));
+            usuario.setSal(nuevaSal);
+            usuario.setHashPwSal(nuevoHas);
+            mapaUsuarios.put(NOMBRE, usuario);
+            return true;
+        }
     }
 
     public static boolean modificarRolUsuario(String nombre, String rol) {
         // TODO 09 modificarRolUsuario
-        return false;
+        if (!mapaUsuarios.containsKey(nombre)) {
+            return false;
+        } else {
+            Usuario usuario = mapaUsuarios.get(nombre);
+            usuario.setRol(rol);
+        } return true;
+
     }
 
     public static boolean eliminarUsuario(String nombre) {
         // TODO 10 eliminarUsuario
+        if (!mapaUsuarios.containsKey(nombre)) {
+            return false;
+        } else {
+            mapaUsuarios.remove(nombre);
+        }
         return true;
     }
 
@@ -155,16 +177,37 @@ public class Dao {
     //region Validación de artículos
     public static List<Item> obtenerArticulosPendientes() {
         // TODO 11 obtenerArticulosPendientes
-        return null;
+        ArrayList<Item> items = new ArrayList<>();
+        for (Item item : mapaItems.values()){
+            if (item.getEstado() == 0) {
+                items.add(item);
+            }
+        }
+        for (Item cosas : items) {
+            return (List<Item>) cosas;
+        }
+
+        return List.of();
     }
 
     public static boolean validarArticulo(long id, boolean valido) {
         // TODO 12 validarArticulo
-        return false;
+        if (mapaItems.containsKey(id)) {
+            Item item = mapaItems.get(id);
+            if (valido) {
+                item.setEstado(1);
+                return true;
+            } else {
+                item.setEstado(0);
+            }return false;
+        }
+        return valido;
     }
 
     public static boolean validarTodos() {
         // TODO 13 validarTodos
+        Item item = (Item) mapaItems;
+        item.setEstado(1);
         return true;
     }
     //endregion
