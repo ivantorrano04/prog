@@ -142,11 +142,10 @@ public class Dao {
         } else {
             Usuario usuario = mapaUsuarios.get(nombre);
             String nuevaSal = Security.generateSalt();
-            String nuevoHas = Security.hash(password + Security.generateSalt());
-            String NOMBRE = String.valueOf(mapaUsuarios.get(nombre));
+            String nuevoHas = Security.hash(password + nuevaSal);
             usuario.setSal(nuevaSal);
             usuario.setHashPwSal(nuevoHas);
-            mapaUsuarios.put(NOMBRE, usuario);
+            mapaUsuarios.put(nombre, usuario);
             return true;
         }
     }
@@ -184,7 +183,7 @@ public class Dao {
             }
         }
         for (Item cosas : items) {
-            return (List<Item>) cosas;
+            return items;
         }
 
         return List.of();
@@ -206,8 +205,11 @@ public class Dao {
 
     public static boolean validarTodos() {
         // TODO 13 validarTodos
-        Item item = (Item) mapaItems;
-        item.setEstado(1);
+        for (Item item : mapaItems.values()) {
+            if (item.getEstado() == EST_PENDIENTE) {
+                item.setEstado(EST_ACEPTADO);
+            }
+        }
         return true;
     }
     //endregion
@@ -215,11 +217,19 @@ public class Dao {
     //region Gestión de artículos y pujas de administrador
     public static List<ItemPujas> obtenerArticulosConPujas() {
         // TODO 14 obtenerArticulosConPujas
-        return null;
+        List<ItemPujas> resultado = new ArrayList<>();
+        for (Map.Entry<Long, List<Puja>> entry : mapaPujas.entrySet()) {
+            if (!entry.getValue().isEmpty()) {
+                Item item = mapaItems.get(entry.getKey());
+                resultado.add(new ItemPujas(item, entry.getValue()));
+            }
+        }
+        return resultado;
     }
 
     public static boolean resetearSubasta() {
         // TODO 15 resetearSubasta
+        mapaPujas.clear();
         return true;
     }
 
@@ -233,12 +243,22 @@ public class Dao {
 
     public static Item obtenerArticuloPujable(long idArt) {
         // TODO 17 obtenerArticuloPujable
+        Item item = mapaItems.get(idArt);
+        if (item != null && item.getEstado() == EST_ACEPTADO) {
+            return item;
+        }
         return null;
     }
 
     public static List<Item> obtenerArticulosPujables() {
         // TODO 18 obtenerArticulosPujables
-        return null;
+        List<Item> pujables = new ArrayList<>();
+        for (Item item : mapaItems.values()) {
+            if (item.getEstado() == EST_ACEPTADO) {
+                pujables.add(item);
+            }
+        }
+        return pujables;
     }
 
     public static boolean pujarArticulo(long idArt, String nombre, int precio) {
@@ -247,14 +267,44 @@ public class Dao {
     }
 
     public static List<PujaItem> obtenerPujasVigentesUsuario(String nombreUsuario) {
-        // TODO 20 obtenerPujasVigentesUsuario
-        return null;
+        List<PujaItem> pujasUsuario = new ArrayList<>();
+
+        for (Map.Entry<Long, List<Puja>> entry : mapaPujas.entrySet()) {
+            Long idItem = entry.getKey();
+            Item item = mapaItems.get(idItem);
+            if (item == null) {
+                return  null;
+            }
+            for (Puja puja : entry.getValue()) {
+                if (puja.getNombreUsuario().equalsIgnoreCase(nombreUsuario)) {
+
+                    PujaItem pujaItem = new PujaItem(
+                            item.getId(),
+                            item.getNombre(),
+                            item.getPrecioInicio(),
+                            item.getUrlImagen(),
+                            item.getNombreUsuario(),
+                            puja.getNombreUsuario(),
+                            puja.getPrecioPujado(),
+                            puja.getInstanteTiempo()
+                    );
+
+                    pujasUsuario.add(pujaItem);
+                }
+            }
+        }
+
+        return pujasUsuario;
     }
 
     public static boolean ofrecerArticulo(Item item) {
         // TODO 21 ofrecerArticulo
+        if (mapaItems.containsKey(item.getId())) {
+            return false;
+        }
+        item.setEstado(EST_PENDIENTE);
+        mapaItems.put(item.getId(), item);
         return true;
     }
-
-    //endregion
+    //endreg
 }
